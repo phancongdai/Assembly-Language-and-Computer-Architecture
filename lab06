@@ -1,0 +1,40 @@
+.data
+array:  .word 5, 2, 8, 1, 6        # Array to be sorted
+length: .word 5                     # Length of the array
+.text
+main:
+    la $t0, array                   
+    lw $t1, length                  
+    addi $t1, $t1, -1               
+    move $t2, $t1                   
+
+outer_loop:
+    addi $t2, $t2, -1               # Decrease the outer loop counter by 1
+    slti $t3, $t2, 0                # Check if the outer loop counter < 0
+    beqz $t3, end                   # If true, exit the program
+    move $t3, $t2                   # Copy the outer loop counter into $t3
+    addi $t3, $t3, 1                # Increase the array index by 1
+inner_loop:
+    lw $t4, 0($t0)                  # Load the element at array[i] into $t4
+    lw $t5, 4($t0)                  # Load the element at array[i+1] into $t5
+    bge $t4, $t5, continue          # If array[i] >= array[i+1], continue
+    addi $t3, $t3, -1               # Decrease the inner loop counter by 1
+    sll $t6, $t3, 2                 # Multiply the inner loop counter by 4 to calculate offset
+shift_elements:
+    sw $t5, 0($t0)                  # Store the element at array[i+1] into array[i]
+    sub $t3, $t3, 1                 # Decrease the inner loop counter by 1
+    sll $t7, $t3, 2                 # Multiply the inner loop counter by 4 to calculate offset
+    add $t0, $t0, $t7               # Increase the array address by offset ($t7)
+    beqz $t3, store_element         # If the inner loop counter = 0, store the element at array[i+1]
+    j shift_elements               # Jump back to the shift_elements loop
+store_element:
+    sw $t4, 0($t0)                 
+    add $t0, $t0, $t6               
+    sw $t5, 0($t0)                 
+    j inner_loop
+continue:
+    addi $t0, $t0, 4                # Increase the array address by 4 to move to the next element
+    j inner_loop
+end:
+    li $v0, 10                      # End the program
+    syscall

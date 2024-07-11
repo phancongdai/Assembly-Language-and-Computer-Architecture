@@ -1,0 +1,88 @@
+.data
+string: .space 100
+messenger1: .asciiz "\nInput the string: "
+messenger2: .asciiz "Result: "
+#stack: .space 1024
+order: .asciiz "\nInput order:"
+order1: .asciiz "\n1. Execute this program"
+order2: .asciiz "\n2. Quit this program"
+exception: .asciiz "\nPlease choose order 1 or 2"
+.text
+initialize: 
+	li $v0, 4
+	la $a0, order1
+	syscall
+	li $v0, 4
+	la $a0, order2
+	syscall
+input:
+	li $v0, 51
+	la $a0, order
+	syscall
+	beq $a0, 1, ord1
+	beq $a0, 2, quit
+	bne $a0, 1, except
+except:
+	li  $v0, 4 
+	la  $a0, exception
+	syscall
+	j input
+ord1:
+	li $v0, 4
+	la $a0, messenger1
+	syscall
+	
+	li $v0, 8
+	la $a0, string
+	li $a1, 100 
+	syscall
+	j main
+quit:
+	li $v0, 10 #terminate
+	syscall
+main:
+	add $t0, $zero, $zero
+	la $a0, string
+	li $sp, 0x7FFFEFFC 
+	add $fp, $sp, $zero
+	fprocess:
+		add $a1, $a0, $t0 #attach value of each elements of string in $a1
+		lb $a2, 0($a1) #load addreess of input string
+		beq $a2 , $zero, end_process # jump off the iterate when $a2 == "\n"
+		addi $t0, $t0, 1 
+	sprocess:
+		#check $a2 belongs to the range from "0" to "9"
+		#addi $a3, $zero, 0x30
+		#blt $a2, $a3, not_in_range
+		#addi $a3, $zero, 0x39
+		#bgt $a2, $a3, not_in_range
+		addi $a3, $zero, 0x41
+		blt $a2, $a3, not_in_range
+		addi $a3, $zero, 0x5A
+		bgt $a2, $a3, not_in_range
+		j push
+		not_in_range: 
+		addi $a3, $zero, 0x61
+		blt $a2, $a3, not_in_range_lower
+		addi $a3, $zero, 0x7A
+		bgt $a2, $a3, not_in_range_lower
+		j push
+		not_in_range_lower: 
+		j fprocess
+	push:
+		#push $a2 in stack
+		addi $sp, $sp, -4
+		sw $a2, 0($sp)
+		j fprocess
+	end_process:
+		li $v0, 4
+		la $a0, messenger2
+		syscall
+	pop_process:
+		#pop stack top from stack
+		li $v0, 11
+		lw $a0, 0($sp)
+		syscall
+		addi $sp, $sp, 4
+		bge $sp,$fp, initialize
+		j pop_process
